@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
+import pandas as pd
 
 class DB:
 
@@ -39,7 +40,7 @@ class DB:
         try:
             with engine.begin() as conn:
                 conn.execute(text(available_league_table))
-                print("Successfully created all pipeline tables.")
+                pass
         except Exception as e:
             print(f"Failed to create logging tables due to: {e}")
 
@@ -62,6 +63,15 @@ class DB:
             print("Successfully truncated all pipeline tables.")
         except Exception as e:
             print(f"Failed to truncate pipeline tables due to: {e}")
+
+
+    def save_dataframe_to_table(self,df: pd.DataFrame, table_name: str):
+        engine = create_engine(self.conn_str)
+        try:
+            df.to_sql(name=table_name, con=engine, index=False, if_exists='replace')
+            print(f'Saved data to {table_name} postgres table')
+        except Exception as e:
+            print(f'Could not save table due to {e}')
 
 
 if __name__ == '__main__':

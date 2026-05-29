@@ -3,6 +3,7 @@ import os
 import http.client
 import json
 import pandas as pd
+from db_int import DB
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
@@ -21,7 +22,7 @@ def get_api_status():
         status = json.loads(response)
         requests_made = status['response']['requests']['current']
         requests_limit = status['response']['requests']['limit_day']
-        print(f'The current status is {requests_made} / {requests_limit}')
+        print(f'The current request status is {requests_made} / {requests_limit}')
     except Exception as e:
         print(f'Could not get status due to {e}')
 
@@ -60,11 +61,18 @@ def available_leagues_to_summary_csv():
     summary_df.to_csv(path_or_buf=AVAILABLE_LEAGUES_SUMMARY_SAVE_PATH, index=False)
 
 
+def save_available_leagues_to_db():
+    available_leagues_df = pd.read_csv(AVAILABLE_LEAGUES_SUMMARY_SAVE_PATH)
+    db = DB()
+    db.save_dataframe_to_table(available_leagues_df, table_name='available_league')
+
+
+
 if __name__ == '__main__':
     get_api_status()
     if not os.path.exists(AVALABLE_LEAGUES_SAVE_PATH):
         fetch_available_leagues ()
         available_leagues_to_summary_csv()
+        save_available_leagues_to_db()
     if not os.path.exists(AVAILABLE_LEAGUES_SUMMARY_SAVE_PATH):
-        available_leagues_to_summary_csv()
-    
+        available_leagues_to_summary_csv()    

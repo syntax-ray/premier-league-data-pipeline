@@ -27,9 +27,13 @@ class DB:
             return False, f"Could not connect to the database due to {e}"
         
     def create_pipeline_tables(self):
+        '''
+            This function automates creation of postgres table used in the pipeline.
+        '''
+
         engine = create_engine(self.conn_str)
-        available_league_table = """
-        CREATE TABLE IF NOT EXISTS available_league (
+        league_table = """
+        CREATE TABLE IF NOT EXISTS league (
             id INT PRIMARY KEY,
             league_id BIGINT UNIQUE NOT NULL,
             name VARCHAR NOT NULL,
@@ -37,43 +41,63 @@ class DB:
             country VARCHAR
         );
         """
+    
+        team_table = '''
+            CREATE TABLE IF NOT EXISTS team (
+            id INT PRIMARY KEY,
+            name VARCHAR NOT NULL,
+            country VARCHAR,
+            national BOOLEAN
+        );
+        '''
+
         try:
             with engine.begin() as conn:
-                conn.execute(text(available_league_table))
+                conn.execute(text(league_table))
+                conn.execute(text(team_table))
                 pass
         except Exception as e:
             print(f"Failed to create logging tables due to: {e}")
 
     def drop_pipeline_tables(self):
         engine = create_engine(self.conn_str)
-        available_league_table = 'drop table if exists available_league cascade'
+        league_table = 'drop table if exists league cascade'
         try:
             with engine.begin() as conn:
-                conn.execute(text(available_league_table)) 
+                conn.execute(text(league_table)) 
             print("Successfully dropped all pipeline tables.")
         except Exception as e:
             print(f"Failed to drop pipeline tables due to: {e}")
     
     def truncate_pipeline_tables(self):
         engine = create_engine(self.conn_str)
-        available_league_table = 'truncate table available_league restart identity cascade'
+        league_table = 'truncate table league restart identity cascade'
         try:
             with engine.begin() as conn:
-                conn.execute(text(available_league_table))
+                conn.execute(text(league_table))
             print("Successfully truncated all pipeline tables.")
         except Exception as e:
             print(f"Failed to truncate pipeline tables due to: {e}")
 
 
-    def save_dataframe_to_table(self,df: pd.DataFrame, table_name: str):
+    def save_dataframe_to_table(self,df: pd.DataFrame, table_name: str, if_exists):
         engine = create_engine(self.conn_str)
         try:
-            df.to_sql(name=table_name, con=engine, index=False, if_exists='replace')
+            df.to_sql(name=table_name, con=engine, index=False, if_exists=if_exists)
             print(f'Saved data to {table_name} postgres table')
         except Exception as e:
             print(f'Could not save table due to {e}')
 
+    def fetch_league_ids(self):
+        engine = create_engine(self.conn_str)
+        try:
+            league_ids = pd.read_sql("select league_id, name, country from league", con=engine)
+            print(f'Successfully fetched league IDs')
+            return league_ids
+        except Exception as e:
+            print(f'Could not fetch league ids due to {e}')
+
 
 if __name__ == '__main__':
     db = DB()
-    db.drop_pipeline_tables()
+    db.create_pipeline_tables()

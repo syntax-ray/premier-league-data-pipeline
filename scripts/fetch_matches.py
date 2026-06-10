@@ -58,39 +58,50 @@ def fetch_seasons():
     except Exception as e:
         print(f'Could not fetch seasons due to {e}')
 
-def fetch_teams():
+def fetch_matches():
     '''
-        Fetch teams data from api based on league and the target year
+        Fetch matches data for all leagues, for a target season
+            * Currently only fetches premier league match data for the target season
     '''
     db = DB()
     league_ids = fetch_league_ids()
     for id in league_ids:
         try:
-            CONN.request("GET", f"/teams?league={id}&season={TARGET_YEAR}", headers=HEADERS)
-            print('Successfully fetched teams')
+            CONN.request("GET", f"/fixtures?league={id}&season={TARGET_YEAR}", headers=HEADERS)
+            print('Successfully fetched matches')
             response = CONN.getresponse().read().decode()
-            teams = json.loads(response)['response']
-            clean_teams = {
+            matches = json.loads(response)['response']
+
+            clean_matches = {
                 'id': [],
-                'name': [],
-                'country': [],
-                'national': []
+                'date': [],
+                'home_id': [],
+                'away_id': [],
+                'season': [],
+                'home_score': [],
+                'away_score': []
             }
-            for team in teams:
-                clean_teams['id'].append(team['team']['id'])
-                clean_teams['name'].append(team['team']['name'])
-                clean_teams['country'].append(team['team']['country'])
-                clean_teams['national'].append(team['team']['national'])
-            clean_teams_df = pd.DataFrame(clean_teams)
-            db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
-            print('Saved teams data to db')
+    
+            for match in matches:
+                clean_matches['id'].append(match['fixture']['id'])
+                clean_matches['date'].append(match['fixture']['date'])
+                clean_matches['home_id'].append(match['teams']["home"]['id'])
+                clean_matches['away_id'].append(match['teams']["away"]['id'])
+                clean_matches['season'].append(TARGET_YEAR)
+                clean_matches['home_score'].append(match['goals']['home'])
+                clean_matches['away_score'].append(match['goals']['away'])
+             
+
+            clean_matches_df = pd.DataFrame(clean_matches)
+            db.save_dataframe_to_table(clean_matches_df, 'match', 'append')            
+            print('Saved match data to db')
             get_api_status()
         except Exception as e:
-            print(f'Could not fetch leagues due to {e}')
+            print(f'Could not fetch matches due to {e}')
     
 
 
 
 if __name__ == '__main__':
     get_api_status()
-    fetch_teams()
+    fetch_matches()

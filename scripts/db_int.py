@@ -51,13 +51,26 @@ class DB:
         );
         '''
 
+        match_table = '''
+            create table if not exists match (
+                id bigint primary key
+                ,date timestamp not null
+                ,home_id int references team(id) not null   
+                ,away_id int references team(id) not null
+                ,season int not null 
+                ,home_score int 
+                ,away_score int                             
+            )
+        '''
+
         try:
             with engine.begin() as conn:
                 conn.execute(text(league_table))
                 conn.execute(text(team_table))
+                conn.execute(text(match_table))
                 pass
         except Exception as e:
-            print(f"Failed to create logging tables due to: {e}")
+            print(f"Failed to create pipeline tables due to: {e}")
 
     def drop_pipeline_tables(self):
         engine = create_engine(self.conn_str)

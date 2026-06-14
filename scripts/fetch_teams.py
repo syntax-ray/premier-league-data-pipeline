@@ -29,14 +29,12 @@ def get_api_status():
 
 def fetch_league_ids():
     '''
-        Meant to return fetched league ids from the database but currently only returns the English premier league id due to api
-        constraints
+        Fetch English Premier League league id. Returns a list incase the scope expands
     '''
     db = DB()
     ids = []
-    # league metadata + league ids
+    # league ids with league data
     league_ids = db.fetch_league_ids()
-    # filyer for premier league
     prem_id_series = ((league_ids.loc[ (league_ids['name'] == 'Premier League') &  (league_ids['country'] == 'England')])['league_id'])
     prem_id = prem_id_series.iloc[0]
     ids.append(prem_id)
@@ -60,33 +58,45 @@ def fetch_seasons():
 
 def fetch_teams():
     '''
-        Fetch teams data from api based on league and the target year
+        Fetch teams data from api based on seasons
+            -> fetch teams
+            -> get existing team ids()
+            -> filter out teams that already exist
+            -> append the rest
     '''
     db = DB()
     league_ids = fetch_league_ids()
+    seasons = fetch_seasons()
+    seasons.sort()
     for id in league_ids:
-        try:
-            CONN.request("GET", f"/teams?league={id}&season={TARGET_YEAR}", headers=HEADERS)
-            print('Successfully fetched teams')
-            response = CONN.getresponse().read().decode()
-            teams = json.loads(response)['response']
-            clean_teams = {
-                'id': [],
-                'name': [],
-                'country': [],
-                'national': []
-            }
-            for team in teams:
-                clean_teams['id'].append(team['team']['id'])
-                clean_teams['name'].append(team['team']['name'])
-                clean_teams['country'].append(team['team']['country'])
-                clean_teams['national'].append(team['team']['national'])
-            clean_teams_df = pd.DataFrame(clean_teams)
-            db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
-            print('Saved teams data to db')
-            get_api_status()
-        except Exception as e:
-            print(f'Could not fetch leagues due to {e}')
+        for season in seasons:
+            try:
+                CONN.request("GET", f"/teams?league={id}&season={season}", headers=HEADERS)
+                print('Successfully fetched teams')
+                response = CONN.getresponse().read().decode()
+                teams = json.loads(response)['response']
+                clean_teams = {
+                    'id': [],
+                    'name': [],
+                    'country': [],
+                    'national': []
+                }
+                
+                existing_teams = db.fetch_team_ids()
+                print(f"There were {len(existing_teams)} teams")
+                for team in teams:
+                    team_id = team['team']['id']
+                    if team_id not in existing_teams:
+                        clean_teams['id'].append(team_id)
+                        clean_teams['name'].append(team['team']['name'])
+                        clean_teams['country'].append(team['team']['country'])
+                        clean_teams['national'].append(team['team']['national'])
+                clean_teams_df = pd.DataFrame(clean_teams)
+                db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
+                print('Saved teams data to db')
+                # get_api_status()
+            except Exception as e:
+                print(f'Could not fetch leagues due to {e}')
     
 
 

@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: pl_data
+    schema: public
+    tables:
+      - name: league
+      - name: match
+      - name: team

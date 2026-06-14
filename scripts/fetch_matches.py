@@ -79,7 +79,8 @@ def fetch_matches():
                 'away_id': [],
                 'season': [],
                 'home_score': [],
-                'away_score': []
+                'away_score': [],
+                'round': []
             }
     
             for match in matches:
@@ -90,6 +91,7 @@ def fetch_matches():
                 clean_matches['season'].append(TARGET_YEAR)
                 clean_matches['home_score'].append(match['goals']['home'])
                 clean_matches['away_score'].append(match['goals']['away'])
+                clean_matches['round'].append(match['league']['round'])
              
 
             clean_matches_df = pd.DataFrame(clean_matches)

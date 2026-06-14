@@ -35,6 +35,7 @@ class Match(Base):
     season = Column(Integer)
     home_score = Column(Integer)
     away_score = Column(Integer)
+    round = Column(String)
 
     
 

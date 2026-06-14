@@ -59,7 +59,8 @@ class DB:
                 ,away_id int references team(id) not null
                 ,season int not null 
                 ,home_score int 
-                ,away_score int                             
+                ,away_score int
+                ,round varchar                             
             )
         '''
 
@@ -75,9 +76,13 @@ class DB:
     def drop_pipeline_tables(self):
         engine = create_engine(self.conn_str)
         league_table = 'drop table if exists league cascade'
+        team_table = 'drop table if exists team cascade'
+        match_table = 'drop table if exists match cascade'
         try:
             with engine.begin() as conn:
                 conn.execute(text(league_table)) 
+                conn.execute(text(team_table))
+                conn.execute(text(match_table))
             print("Successfully dropped all pipeline tables.")
         except Exception as e:
             print(f"Failed to drop pipeline tables due to: {e}")
@@ -113,4 +118,5 @@ class DB:
 
 if __name__ == '__main__':
     db = DB()
-    db.create_pipeline_tables()
+    # db.create_pipeline_tables()
+    db.drop_pipeline_tables()

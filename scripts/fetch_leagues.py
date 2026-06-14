@@ -32,47 +32,29 @@ def fetch_leagues():
         print('Successfully fetched leagues')
         response = CONN.getresponse().read().decode()
         leagues = json.loads(response)['response']
-        with open(LEAGUES_SAVE_PATH, 'w') as f:
-            json.dump(leagues, f)
-        print('Saved leagues data to file')
-        get_api_status()
+        leagues_summary = {
+            'id': [],
+            'league_id': [],
+            'name': [],
+            'type': [],
+            'country': []
+        }
+        for idx, league in enumerate(leagues):
+            leagues_summary['id'].append(idx + 1)
+            leagues_summary['league_id'].append(league['league']['id'])
+            leagues_summary['name'].append(league['league']['name'])
+            leagues_summary['type'].append(league['league']['type'])
+            leagues_summary['country'].append(league['country']['name'])
+
+        summary_df = pd.DataFrame(leagues_summary)
+          
+        db = DB()
+        db.save_dataframe_to_table(summary_df, table_name='league', if_exists='replace')
+
     except Exception as e:
         print(f'Could not fetch leagues due to {e}')
     
-def leagues_to_summary_csv():
-    leagues = None
-    with open(LEAGUES_SAVE_PATH, 'r') as f:
-        leagues = json.load(f)
-    summary = {
-        'id': [],
-        'league_id': [],
-        'name': [],
-        'type': [],
-        'country': []
-    }
-    for idx, league in enumerate(leagues):
-        summary['id'].append(idx + 1)
-        summary['league_id'].append(league['league']['id'])
-        summary['name'].append(league['league']['name'])
-        summary['type'].append(league['league']['type'])
-        summary['country'].append(league['country']['name'])
-
-    summary_df = pd.DataFrame(summary)
-    summary_df.to_csv(path_or_buf=LEAGUES_SUMMARY_SAVE_PATH, index=False)
-
-
-def save_leagues_to_db():
-    leagues_df = pd.read_csv(LEAGUES_SUMMARY_SAVE_PATH)
-    db = DB()
-    db.save_dataframe_to_table(leagues_df, table_name='league', if_exists='replace')
-
-
 
 if __name__ == '__main__':
     get_api_status()
-    if not os.path.exists(LEAGUES_SAVE_PATH):
-        fetch_leagues ()
-        leagues_to_summary_csv()
-        save_leagues_to_db()
-    if not os.path.exists(LEAGUES_SUMMARY_SAVE_PATH):
-        leagues_to_summary_csv()    
+    fetch_leagues()

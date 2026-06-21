@@ -1,6 +1,6 @@
 # premier-league-data-pipeline
 
-End-to-end data pipeline built using: Python
+End-to-end data pipeline built using: Python, and SQL
 
 API: https://www.api-football.com/
 

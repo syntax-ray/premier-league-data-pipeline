@@ -4,6 +4,8 @@ import http.client
 import json
 import pandas as pd
 from db_int import DB
+from fetch_seasons import fetch_seasons
+import time
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
@@ -41,21 +43,6 @@ def fetch_league_ids():
     return ids
 
 
-def fetch_seasons():
-    '''
-        Fetches available season years from the api
-    '''
-    try:
-        CONN.request("GET", f"/leagues/seasons", headers=HEADERS)
-        print('Successfully fetched seasons')
-        response = CONN.getresponse().read().decode()
-        seasons = json.loads(response)['response']
-        get_api_status()
-        return seasons
-
-    except Exception as e:
-        print(f'Could not fetch seasons due to {e}')
-
 def fetch_teams():
     '''
         Fetch teams data from api based on seasons
@@ -67,9 +54,16 @@ def fetch_teams():
     db = DB()
     league_ids = fetch_league_ids()
     seasons = fetch_seasons()
-    seasons.sort()
+    skip_sleep = False
+
     for id in league_ids:
         for season in seasons:
+            print(f'Fetching season: ({season})')
+            if not skip_sleep:
+                skip_sleep = True
+            else:
+                time.sleep(30)
+
             try:
                 CONN.request("GET", f"/teams?league={id}&season={season}", headers=HEADERS)
                 print('Successfully fetched teams')
@@ -83,7 +77,6 @@ def fetch_teams():
                 }
                 
                 existing_teams = db.fetch_team_ids()
-                print(f"There were {len(existing_teams)} teams")
                 for team in teams:
                     team_id = team['team']['id']
                     if team_id not in existing_teams:
@@ -94,7 +87,6 @@ def fetch_teams():
                 clean_teams_df = pd.DataFrame(clean_teams)
                 db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
                 print('Saved teams data to db')
-                # get_api_status()
             except Exception as e:
                 print(f'Could not fetch leagues due to {e}')
     

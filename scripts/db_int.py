@@ -123,6 +123,14 @@ class DB:
         except Exception as e:
             print(f'Could not fetch team ids due to {e}')
 
+    def fetch_match_ids(self):
+        engine = create_engine(self.conn_str)
+        try:
+            match_ids = pd.read_sql("select id from match", con=engine)
+            return set(match_ids['id'].to_list()) if not match_ids.empty else {}
+        except Exception as e:
+            print(f'Could not fetch match ids due to {e}')
+
 
 if __name__ == '__main__':
     db = DB()

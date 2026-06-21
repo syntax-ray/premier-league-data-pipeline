@@ -4,6 +4,8 @@ import http.client
 import json
 import pandas as pd
 from db_int import DB
+from fetch_seasons import fetch_seasons
+import time
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
@@ -60,50 +62,65 @@ def fetch_seasons():
 
 def fetch_matches():
     '''
-        Fetch matches data for all leagues, for a target season
-            * Currently only fetches premier league match data for the target season
+        Fetch matches data for all premier league seasons in the season list.
+
+            -> fetch matches
+            -> get existing match ids()
+            -> filter out matches that already exist
+            -> append the rest
     '''
     db = DB()
     league_ids = fetch_league_ids()
+    seasons = fetch_seasons()
+    skip_sleep = False
     for id in league_ids:
-        try:
-            CONN.request("GET", f"/fixtures?league={id}&season={TARGET_YEAR}", headers=HEADERS)
-            print('Successfully fetched matches')
-            response = CONN.getresponse().read().decode()
-            matches = json.loads(response)['response']
+        for season in seasons:
+            print(f'Fetching season: ({season})')
+            if not skip_sleep:
+                skip_sleep = True
+            else:
+                time.sleep(30)
+            try:
+                CONN.request("GET", f"/fixtures?league={id}&season={season}", headers=HEADERS)
+                print('Successfully fetched matches')
+                response = CONN.getresponse().read().decode()
+                matches = json.loads(response)['response']
 
-            clean_matches = {
-                'id': [],
-                'date': [],
-                'home_id': [],
-                'away_id': [],
-                'season': [],
-                'home_score': [],
-                'away_score': [],
-                'round': []
-            }
-    
-            for match in matches:
-                clean_matches['id'].append(match['fixture']['id'])
-                clean_matches['date'].append(match['fixture']['date'])
-                clean_matches['home_id'].append(match['teams']["home"]['id'])
-                clean_matches['away_id'].append(match['teams']["away"]['id'])
-                clean_matches['season'].append(TARGET_YEAR)
-                clean_matches['home_score'].append(match['goals']['home'])
-                clean_matches['away_score'].append(match['goals']['away'])
-                clean_matches['round'].append(match['league']['round'])
-             
+                clean_matches = {
+                    'id': [],
+                    'date': [],
+                    'home_id': [],
+                    'away_id': [],
+                    'season': [],
+                    'home_score': [],
+                    'away_score': [],
+                    'round': []
+                }
 
-            clean_matches_df = pd.DataFrame(clean_matches)
-            db.save_dataframe_to_table(clean_matches_df, 'match', 'append')            
-            print('Saved match data to db')
-            get_api_status()
-        except Exception as e:
-            print(f'Could not fetch matches due to {e}')
+                existing_matches = db.fetch_match_ids()
+
+                for match in matches:
+                    match_id = match['fixture']['id']
+                    if match_id not in existing_matches: 
+                        clean_matches['id'].append(match_id)
+                        clean_matches['date'].append(match['fixture']['date'])
+                        clean_matches['home_id'].append(match['teams']["home"]['id'])
+                        clean_matches['away_id'].append(match['teams']["away"]['id'])
+                        clean_matches['season'].append(season)
+                        clean_matches['home_score'].append(match['goals']['home'])
+                        clean_matches['away_score'].append(match['goals']['away'])
+                        clean_matches['round'].append(match['league']['round'])
+
+
+                clean_matches_df = pd.DataFrame(clean_matches)
+                db.save_dataframe_to_table(clean_matches_df, 'match', 'append')            
+                print('Saved match data to db')
+            except Exception as e:
+                print(f'Could not fetch matches due to {e}')
     
 
 
 
 if __name__ == '__main__':
-    get_api_status()
+    # get_api_status()
     fetch_matches()

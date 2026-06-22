@@ -11,4 +11,6 @@ API: https://www.api-football.com/
 2. Fetched premier league team data from API for the available seasons and saved it to db
 3. Fetched premier league match data from API for the available seasons and saved it to db
 4. Added dbt to the project and connected the premier league data as a data source
-5. Added the staging layer where naming uniformity and duplicate checks were handled
+5. Added a staging layer to the dbt project where naming uniformity and duplicate checks were handled
+6. Added a marts layer to the dbt project
+7. Added a team_season_summary mart script that breaks down team performance per season

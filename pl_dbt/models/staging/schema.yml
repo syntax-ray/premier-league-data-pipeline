@@ -1,0 +1,24 @@
+models:
+  - name: stg_league
+    columns:
+      - name: id 
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_match
+    columns:
+      - name: id 
+        data_tests:
+          - unique
+          - not_null
+  
+  - name: stg_team
+    columns:
+      - name: id 
+        data_tests:
+          - unique
+          - not_null
+
+
+  

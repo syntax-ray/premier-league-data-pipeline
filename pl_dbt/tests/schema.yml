@@ -1,0 +1,9 @@
+data_tests:
+  - name: assert_no_duplicates_mart_team_season_summary
+    description: >
+      A team should have one aggregated record per season. Any team that has more than one record in a given season is a duplicate.
+  
+  - name: assert_positive_points_mart_team_season_summary
+    description: > 
+      The points value is a derived column that depends on computation in more than one cte. It is therefore important to validate this value.
+      The points tally from a season campaign cannot be less than zero hence the assertion.

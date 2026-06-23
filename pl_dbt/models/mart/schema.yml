@@ -1,0 +1,6 @@
+models:
+  - name: mart_team_season_summary
+    columns:
+      - name: season
+        data_tests:
+          - not_null

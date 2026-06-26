@@ -93,6 +93,7 @@ as (
 season_summary
 as (
   select
+    -- home & away
     summary_home.season
     ,summary_home.team_id
     ,summary_home.team_name
@@ -107,8 +108,28 @@ as (
     ,summary_home.home_points + summary_away.away_points                                                  as points
     ,round(((summary_home.home_wins + summary_away.away_wins) * 100)::numeric             
       / (summary_home.home_matches_played + summary_away.away_matches_played), 2)::numeric(5, 2)          as win_percentage
+
+    -- home
+    ,home_matches_played
+    ,home_wins
+    ,home_draws
+    ,home_losses
+    ,home_goals_for
+    ,home_goals_against
+    ,home_goal_difference
+    ,home_points
     ,round((summary_home.home_wins * 100)::numeric 
       /  summary_home.home_matches_played, 2)::numeric(5, 2)                                              as home_win_percentage
+
+    -- away
+    ,away_matches_played
+    ,away_wins
+    ,away_draws
+    ,away_losses
+    ,away_goals_for
+    ,away_goals_against
+    ,away_goal_difference
+    ,away_points
     ,round((summary_away.away_wins * 100)::numeric 
       /  summary_away.away_matches_played, 2)::numeric(5, 2)                                              as away_win_percentage
 
@@ -118,6 +139,7 @@ as (
 )
 
 select
+  -- home & away
   season
   ,team_id
   ,team_name
@@ -130,7 +152,27 @@ select
   ,goal_difference
   ,points
   ,win_percentage
+
+  -- home
+  ,home_matches_played
+  ,home_wins
+  ,home_draws
+  ,home_losses
+  ,home_goals_for
+  ,home_goals_against
+  ,home_goal_difference
+  ,home_points
   ,home_win_percentage
+
+  --away
+  ,away_matches_played
+  ,away_wins
+  ,away_draws
+  ,away_losses
+  ,away_goals_for
+  ,away_goals_against
+  ,away_goal_difference
+  ,away_points
   ,away_win_percentage
 
 from season_summary

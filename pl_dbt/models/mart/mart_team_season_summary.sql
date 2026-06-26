@@ -96,16 +96,21 @@ as (
     summary_home.season
     ,summary_home.team_id
     ,summary_home.team_name
-    ,summary_home.home_matches_played + summary_away.away_matches_played    as matches_played
-    ,summary_home.home_wins + summary_away.away_wins                        as wins
-    ,summary_home.home_draws + summary_away.away_draws                      as draws
-    ,summary_home.home_losses + summary_away.away_losses                    as losses
-    ,summary_home.home_goals_for + summary_away.away_goals_for              as goals_for
-    ,summary_home.home_goals_against + summary_away.away_goals_against      as goals_against
-    ,summary_home.home_goal_difference
-       + summary_away.away_goal_difference                                  as goal_difference
-    ,summary_home.home_points + summary_away.away_points                    as points
-
+    ,summary_home.home_matches_played + summary_away.away_matches_played                                  as matches_played
+    ,summary_home.home_wins + summary_away.away_wins                                                      as wins
+    ,summary_home.home_draws + summary_away.away_draws                                                    as draws
+    ,summary_home.home_losses + summary_away.away_losses                                                  as losses
+    ,summary_home.home_goals_for + summary_away.away_goals_for                                            as goals_for
+    ,summary_home.home_goals_against + summary_away.away_goals_against                                    as goals_against
+    ,summary_home.home_goal_difference                              
+       + summary_away.away_goal_difference                                                                as goal_difference
+    ,summary_home.home_points + summary_away.away_points                                                  as points
+    ,round(((summary_home.home_wins + summary_away.away_wins) * 100)::numeric             
+      / (summary_home.home_matches_played + summary_away.away_matches_played), 2)::numeric(5, 2)          as win_percentage
+    ,round((summary_home.home_wins * 100)::numeric 
+      /  summary_home.home_matches_played, 2)::numeric(5, 2)                                              as home_win_percentage
+    ,round((summary_away.away_wins * 100)::numeric 
+      /  summary_away.away_matches_played, 2)::numeric(5, 2)                                              as away_win_percentage
 
   from season_summary_home summary_home
   left outer join season_summary_away summary_away on summary_home.team_id = summary_away.team_id
@@ -124,6 +129,9 @@ select
   ,goals_against
   ,goal_difference
   ,points
+  ,win_percentage
+  ,home_win_percentage
+  ,away_win_percentage
 
 from season_summary
 order by

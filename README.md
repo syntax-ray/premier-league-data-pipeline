@@ -14,6 +14,8 @@ API: https://www.api-football.com/
 5. Added a staging layer to the dbt project where naming uniformity and duplicate checks were handled
 6. Added a marts layer to the dbt project
 7. Added a team_season_summary mart script that breaks down team performance per season
+8. Added Superset for dashboarding
+9. Added team performance dashboard
 
 
 ## Infrastructure

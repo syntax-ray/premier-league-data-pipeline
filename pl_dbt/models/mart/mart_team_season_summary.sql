@@ -120,6 +120,8 @@ as (
     ,home_points
     ,round((summary_home.home_wins * 100)::numeric 
       /  summary_home.home_matches_played, 2)::numeric(5, 2)                                              as home_win_percentage
+    ,row_number() over(partition by summary_home.season 
+      order by summary_home.home_points desc, home_goal_difference desc)                                  as home_position  
 
     -- away
     ,away_matches_played
@@ -132,6 +134,8 @@ as (
     ,away_points
     ,round((summary_away.away_wins * 100)::numeric 
       /  summary_away.away_matches_played, 2)::numeric(5, 2)                                              as away_win_percentage
+    ,row_number() over(partition by summary_away.season 
+       order by summary_away.away_points desc, away_goal_difference desc)                                 as away_position  
 
   from season_summary_home summary_home
   left outer join season_summary_away summary_away on summary_home.team_id = summary_away.team_id
@@ -151,7 +155,8 @@ select
   ,goals_against
   ,goal_difference
   ,points
-  ,win_percentage
+  ,win_percentage 
+  ,row_number() over(partition by season order by points desc, goal_difference desc)                      as position
 
   -- home
   ,home_matches_played
@@ -163,6 +168,7 @@ select
   ,home_goal_difference
   ,home_points
   ,home_win_percentage
+  ,home_position
 
   --away
   ,away_matches_played
@@ -174,6 +180,7 @@ select
   ,away_goal_difference
   ,away_points
   ,away_win_percentage
+  ,away_position
 
 from season_summary
 order by

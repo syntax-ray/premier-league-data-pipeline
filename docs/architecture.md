@@ -10,10 +10,11 @@ Python
 PostgreSQL
 
 ## Transformation Layer
-Python (ETL)
-dbt (ELT)
-  staging
-  marts
+Python
+dbt 
+
+## Presentation Layer
+Superset
 
 ## Data Quality Layer
 dbt tests

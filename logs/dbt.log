@@ -323,3 +323,19 @@ Runtime Error
 [0m17:06:43.578230 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff976b42060>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff976cdf650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7ff976cd2cf0>]}
 [0m17:06:43.578468 [debug] [MainThread]: Flushing usage events
 [0m17:06:44.114547 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:05:41.861838 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f8255ade3c0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f8258566850>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f8254af7b10>]}
+
+
+============================== 13:05:41.865701 | 9ff96e29-da75-4542-bb5c-b74e07b9daf8 ==============================
+[0m13:05:41.865701 [info ] [MainThread]: Running with dbt=1.11.11
+[0m13:05:41.866083 [debug] [MainThread]: running dbt with arguments {'cache_selected_only': 'False', 'version_check': 'True', 'partial_parse': 'True', 'printer_width': '80', 'introspect': 'True', 'warn_error': 'None', 'invocation_command': 'dbt run --select mart_league_summary', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'quiet': 'False', 'log_cache_events': 'False', 'write_json': 'True', 'log_format': 'default', 'use_colors': 'True', 'fail_fast': 'False', 'target_path': 'None', 'send_anonymous_usage_stats': 'True', 'debug': 'False', 'profiles_dir': '/home/syntax-ray/.dbt', 'use_experimental_parser': 'False', 'empty': 'False', 'no_print': 'None', 'log_path': 'logs', 'indirect_selection': 'eager'}
+[0m13:05:41.866422 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /home/syntax-ray/Software/premier-league-data-pipeline/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m13:05:41.867013 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 0.04176576, "process_in_blocks": "28160", "process_kernel_time": 0.092498, "process_mem_max_rss": "103308", "process_out_blocks": "16", "process_user_time": 0.807409}
+[0m13:05:41.867329 [debug] [MainThread]: Command `dbt run` failed at 13:05:41.867258 after 0.04 seconds
+[0m13:05:41.867567 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f825496a060>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f8254b07650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7f8254afacf0>]}
+[0m13:05:41.867812 [debug] [MainThread]: Flushing usage events
+[0m13:05:42.572252 [debug] [MainThread]: An error was encountered while trying to flush usage events

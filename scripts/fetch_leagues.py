@@ -1,28 +1,12 @@
-from dotenv import load_dotenv
-import logging
-import os
-
 import pandas as pd
 import requests
-
-from consts import API_FOOTBALL_URL, LOGGING_FILE
 from db_int import DB
 from fetch_api_info import get_api_info
 from utils.logging_config import get_logger
+from api.api_football import api_football_get
 
 
 logger = get_logger(__name__)
-
-load_dotenv()
-
-API_KEY = os.getenv("API_KEY")
-
-if API_KEY is None:
-    raise RuntimeError("API_KEY environment variable is not set.")
-
-HEADERS = {
-    "x-apisports-key": API_KEY
-}
 
 
 def fetch_leagues():
@@ -30,13 +14,7 @@ def fetch_leagues():
     Fetch raw league data from the API.
     """
     try:
-        response = requests.get(
-            f"{API_FOOTBALL_URL}/leagues",
-            headers=HEADERS,
-            timeout=10,
-        )
-
-        response.raise_for_status()
+        response = api_football_get(endpoint='leagues')
 
         data = response.json()
 

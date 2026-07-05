@@ -1,18 +1,11 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 import pandas as pd
-import logging
-from consts import API_FOOTBALL_URL, LOGGING_FILE
+from utils.logging_config import get_logger
 
-logging.basicConfig(
-    filename=LOGGING_FILE,
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-)
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class DB:
 

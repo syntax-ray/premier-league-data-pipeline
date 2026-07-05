@@ -1,37 +1,35 @@
 from dotenv import load_dotenv
 import os
-import http.client
-import json
 import pandas as pd
 from db_int import DB
+import requests
+from consts import LOGGING_FILE, API_FOOTBALL_URL
+from fetch_api_info import get_api_info
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOGGING_FILE
+)
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
-CONN = http.client.HTTPSConnection("v3.football.api-sports.io")
-LEAGUES_SAVE_PATH = os.path.join(os.getcwd(), 'data', 'leagues.json')
-LEAGUES_SUMMARY_SAVE_PATH = os.path.join(os.getcwd(), 'data', 'leagues_summary.csv')
-
 HEADERS = {
     'x-apisports-key': API_KEY
-    }
+}
 
-def get_api_status():
-    try:
-        CONN.request('GET',"/status", headers=HEADERS)
-        response = CONN.getresponse().read().decode()
-        status = json.loads(response)
-        requests_made = status['response']['requests']['current']
-        requests_limit = status['response']['requests']['limit_day']
-        print(f'The current request status is {requests_made} / {requests_limit}')
-    except Exception as e:
-        print(f'Could not get status due to {e}')
 
 def fetch_leagues():
+    '''
+        Fetches league information from api football
+    '''
     try:
-        CONN.request("GET", "/leagues", headers=HEADERS)
-        print('Successfully fetched leagues')
-        response = CONN.getresponse().read().decode()
-        leagues = json.loads(response)['response']
+        response = requests.get(f'{API_FOOTBALL_URL}/leagues', headers=HEADERS)
+        response = response.json()
+        leagues = response['response']
         leagues_summary = {
             'id': [],
             'league_id': [],
@@ -45,16 +43,14 @@ def fetch_leagues():
             leagues_summary['name'].append(league['league']['name'])
             leagues_summary['type'].append(league['league']['type'])
             leagues_summary['country'].append(league['country']['name'])
-
         summary_df = pd.DataFrame(leagues_summary)
-          
         db = DB()
         db.save_dataframe_to_table(summary_df, table_name='league', if_exists='replace')
-
     except Exception as e:
-        print(f'Could not fetch leagues due to {e}')
+        logger.error('Could not fetch leagues due to %s', e)
     
 
 if __name__ == '__main__':
-    get_api_status()
+    current_api_status, _ = get_api_info()
+    logger.info(current_api_status)
     fetch_leagues()

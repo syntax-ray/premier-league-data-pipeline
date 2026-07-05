@@ -6,27 +6,25 @@ import pandas as pd
 from db_int import DB
 from fetch_seasons import fetch_seasons
 import time
+import logging
+from consts import LOGGING_FILE, API_FOOTBALL_URL 
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOGGING_FILE
+)
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
-CONN = http.client.HTTPSConnection("v3.football.api-sports.io")
-TARGET_YEAR = 2024
 
 
 HEADERS = {
     'x-apisports-key': API_KEY
-    }
-
-def get_api_status():
-    try:
-        CONN.request('GET',"/status", headers=HEADERS)
-        response = CONN.getresponse().read().decode()
-        status = json.loads(response)
-        requests_made = status['response']['requests']['current']
-        requests_limit = status['response']['requests']['limit_day']
-        print(f'The current request status is {requests_made} / {requests_limit}')
-    except Exception as e:
-        print(f'Could not get status due to {e}')
+}
 
 
 def fetch_league_ids():
@@ -44,22 +42,6 @@ def fetch_league_ids():
     ids.append(prem_id)
     return ids
 
-
-def fetch_seasons():
-    '''
-        Fetches available season years from the api
-    '''
-    try:
-        CONN.request("GET", f"/leagues/seasons", headers=HEADERS)
-        print('Successfully fetched seasons')
-        response = CONN.getresponse().read().decode()
-        seasons = json.loads(response)['response']
-        get_api_status()
-        return seasons
-
-    except Exception as e:
-        print(f'Could not fetch seasons due to {e}')
-
 def fetch_matches():
     '''
         Fetch matches data for all premier league seasons in the season list.
@@ -75,16 +57,15 @@ def fetch_matches():
     skip_sleep = False
     for id in league_ids:
         for season in seasons:
-            print(f'Fetching season: ({season})')
+            logger.info('Fetching matches for season: (%s)',season)
             if not skip_sleep:
                 skip_sleep = True
             else:
                 time.sleep(30)
             try:
-                CONN.request("GET", f"/fixtures?league={id}&season={season}", headers=HEADERS)
-                print('Successfully fetched matches')
-                response = CONN.getresponse().read().decode()
-                matches = json.loads(response)['response']
+                response = requests.get(f'{API_FOOTBALL_URL}/fixtures?league={id}&season={season}', headers=HEADERS)
+                response = response.json()
+                matches = response['response']
 
                 clean_matches = {
                     'id': [],
@@ -114,13 +95,11 @@ def fetch_matches():
 
                 clean_matches_df = pd.DataFrame(clean_matches)
                 db.save_dataframe_to_table(clean_matches_df, 'match', 'append')            
-                print('Saved match data to db')
             except Exception as e:
-                print(f'Could not fetch matches due to {e}')
+                logger.error('Could not fetch matches due to %s', e)
     
 
 
 
 if __name__ == '__main__':
-    # get_api_status()
     fetch_matches()

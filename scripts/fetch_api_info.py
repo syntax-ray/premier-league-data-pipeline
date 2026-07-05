@@ -1,34 +1,43 @@
 from dotenv import load_dotenv
 import os
-import http.client
 import json
+import logging
+from consts import LOGGING_FILE, API_FOOTBALL_URL
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOGGING_FILE
+)
+
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
-CONN = http.client.HTTPSConnection("v3.football.api-sports.io")
-
 HEADERS = {
     'x-apisports-key': API_KEY
 }
-
-
-def max_calls_per_minute():
-    CONN.request('GET',"/status", headers=HEADERS)
-    max_calls = CONN.getresponse().getheader('X-RateLimit-Limit')
-    return max_calls
-
+    
 
 def get_api_info():
+    '''
+        Fetches information about api-football api on the current plan
+    '''
     try:
-        CONN.request('GET',"/status", headers=HEADERS)
-        response = CONN.getresponse().read().decode()
-        status = json.loads(response)
-        requests_made = status['response']['requests']['current']
-        requests_limit = status['response']['requests']['limit_day']
-        print(f'The current request status is {requests_made} / {requests_limit}')
+        response = requests.get(
+            f"{API_FOOTBALL_URL}/status",
+            headers=HEADERS
+        )
+        max_calls_per_minute = response.headers["X-RateLimit-Limit"]
+        response = response.json()
+        requests_made = response['response']['requests']['current']
+        requests_limit = response['response']['requests']['limit_day']
+        return f'The current request status is {requests_made} / {requests_limit}', max_calls_per_minute
     except Exception as e:
-        print(f'Could not get status due to {e}')
+        logger.error(f'Could not get status due to {e}')
 
 
 if __name__ == '__main__':
-    print(max_calls_per_minute())
+    print(get_api_info())

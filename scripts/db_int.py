@@ -3,6 +3,16 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 import pandas as pd
+import logging
+from consts import API_FOOTBALL_URL, LOGGING_FILE
+
+logging.basicConfig(
+    filename=LOGGING_FILE,
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 class DB:
 
@@ -17,7 +27,7 @@ class DB:
             self.create_pipeline_tables()
 
     def check_postgres_connection(self):
-        print(f'Connecting to database {self.database} on port {self.port} as user {self.user} on host {self.host}')
+        logger.info('Connecting to database %s on port %s as user %s on host %s',self.database, self.port, self.user, self.host)
         try:
             engine = create_engine(self.conn_str)
             connection = engine.connect()
@@ -71,7 +81,7 @@ class DB:
                 conn.execute(text(match_table))
                 pass
         except Exception as e:
-            print(f"Failed to create pipeline tables due to: {e}")
+            logger.error("Failed to create pipeline tables due to: %s", e)
 
     def drop_pipeline_tables(self):
         engine = create_engine(self.conn_str)
@@ -83,9 +93,9 @@ class DB:
                 conn.execute(text(league_table)) 
                 conn.execute(text(team_table))
                 conn.execute(text(match_table))
-            print("Successfully dropped all pipeline tables.")
+            logger.info("Successfully dropped all pipeline tables.")
         except Exception as e:
-            print(f"Failed to drop pipeline tables due to: {e}")
+            logger.error("Failed to drop pipeline tables due to: %s", e)
     
     def truncate_pipeline_tables(self):
         engine = create_engine(self.conn_str)
@@ -93,27 +103,28 @@ class DB:
         try:
             with engine.begin() as conn:
                 conn.execute(text(league_table))
-            print("Successfully truncated all pipeline tables.")
+            logger.info("Successfully truncated all pipeline tables.")
         except Exception as e:
-            print(f"Failed to truncate pipeline tables due to: {e}")
+            logger.error("Failed to truncate pipeline tables due to: %s", e)
 
 
     def save_dataframe_to_table(self,df: pd.DataFrame, table_name: str, if_exists):
         engine = create_engine(self.conn_str)
         try:
             df.to_sql(name=table_name, con=engine, index=False, if_exists=if_exists)
-            print(f'Saved data to {table_name} postgres table')
+            rows = df.shape[0]
+            logger.info('Saved %s records to %s postgres table', rows, table_name)
         except Exception as e:
-            print(f'Could not save table due to {e}')
+            logger.error('Could not save table due to %s', e)
 
     def fetch_league_ids(self):
         engine = create_engine(self.conn_str)
         try:
             league_ids = pd.read_sql("select league_id, name, country from league", con=engine)
-            print(f'Successfully fetched league IDs')
+            logger.info('Successfully fetched league IDs')
             return league_ids
         except Exception as e:
-            print(f'Could not fetch league ids due to {e}')
+            logger.error('Could not fetch league ids due to %s', e)
 
     def fetch_team_ids(self):
         engine = create_engine(self.conn_str)
@@ -121,7 +132,7 @@ class DB:
             team_ids = pd.read_sql("select id from team", con=engine)
             return set(team_ids['id'].to_list()) if not team_ids.empty else {}
         except Exception as e:
-            print(f'Could not fetch team ids due to {e}')
+            logger.error('Could not fetch team ids due to %s', e)
 
     def fetch_match_ids(self):
         engine = create_engine(self.conn_str)
@@ -129,7 +140,7 @@ class DB:
             match_ids = pd.read_sql("select id from match", con=engine)
             return set(match_ids['id'].to_list()) if not match_ids.empty else {}
         except Exception as e:
-            print(f'Could not fetch match ids due to {e}')
+            logger.error('Could not fetch match ids due to %s', e)
 
 
 if __name__ == '__main__':

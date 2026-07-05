@@ -1,32 +1,29 @@
 from dotenv import load_dotenv
 import os
-import http.client
-import json
 import pandas as pd
 from db_int import DB
 from fetch_seasons import fetch_seasons
 import time
+import logging
+import requests
+from fetch_api_info import get_api_info
+from consts import LOGGING_FILE, API_FOOTBALL_URL
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOGGING_FILE
+)
+
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
-CONN = http.client.HTTPSConnection("v3.football.api-sports.io")
-TARGET_YEAR = 2024
-
-
 HEADERS = {
     'x-apisports-key': API_KEY
-    }
-
-def get_api_status():
-    try:
-        CONN.request('GET',"/status", headers=HEADERS)
-        response = CONN.getresponse().read().decode()
-        status = json.loads(response)
-        requests_made = status['response']['requests']['current']
-        requests_limit = status['response']['requests']['limit_day']
-        print(f'The current request status is {requests_made} / {requests_limit}')
-    except Exception as e:
-        print(f'Could not get status due to {e}')
+}
 
 
 def fetch_league_ids():
@@ -58,17 +55,16 @@ def fetch_teams():
 
     for id in league_ids:
         for season in seasons:
-            print(f'Fetching season: ({season})')
+            logger.info('Fetching teams for season: (%s)', season)
             if not skip_sleep:
                 skip_sleep = True
             else:
                 time.sleep(30)
 
             try:
-                CONN.request("GET", f"/teams?league={id}&season={season}", headers=HEADERS)
-                print('Successfully fetched teams')
-                response = CONN.getresponse().read().decode()
-                teams = json.loads(response)['response']
+                response = requests.get(f"{API_FOOTBALL_URL}/teams?league={id}&season={season}", headers=HEADERS)
+                response = response.json()
+                teams = response['response']
                 clean_teams = {
                     'id': [],
                     'name': [],
@@ -86,13 +82,13 @@ def fetch_teams():
                         clean_teams['national'].append(team['team']['national'])
                 clean_teams_df = pd.DataFrame(clean_teams)
                 db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
-                print('Saved teams data to db')
             except Exception as e:
-                print(f'Could not fetch leagues due to {e}')
+                logger.error('Could not fetch leagues due to %s', e)
     
 
 
 
 if __name__ == '__main__':
-    get_api_status()
+    current_api_status, _ = get_api_info()
+    logger.info(current_api_status)
     fetch_teams()

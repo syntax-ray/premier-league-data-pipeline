@@ -1,43 +1,63 @@
 from dotenv import load_dotenv
-import os
-import json
 import logging
-from consts import LOGGING_FILE, API_FOOTBALL_URL
+import os
+
 import requests
+
+from consts import API_FOOTBALL_URL, LOGGING_FILE
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
-    filename=LOGGING_FILE
+    filename=LOGGING_FILE,
 )
 
 logger = logging.getLogger(__name__)
 
-
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
+
+API_KEY = os.getenv("API_KEY")
+if API_KEY is None:
+    raise RuntimeError("API_KEY environment variable is not set.")
+
 HEADERS = {
-    'x-apisports-key': API_KEY
+    "x-apisports-key": API_KEY,
 }
-    
+
 
 def get_api_info():
-    '''
-        Fetches information about api-football api on the current plan
-    '''
+    """
+    Fetch information about the current API-Football subscription.
+    """
     try:
         response = requests.get(
             f"{API_FOOTBALL_URL}/status",
-            headers=HEADERS
+            headers=HEADERS,
+            timeout=10,
         )
-        max_calls_per_minute = response.headers["X-RateLimit-Limit"]
-        response = response.json()
-        requests_made = response['response']['requests']['current']
-        requests_limit = response['response']['requests']['limit_day']
-        return f'The current request status is {requests_made} / {requests_limit}', max_calls_per_minute
-    except Exception as e:
-        logger.error(f'Could not get status due to {e}')
 
+        response.raise_for_status()
+
+        data = response.json()
+
+        max_calls_per_minute = response.headers["X-RateLimit-Limit"]
+        requests_made = data["response"]["requests"]["current"]
+        requests_limit = data["response"]["requests"]["limit_day"]
+
+        logger.info(
+            "Retrieved API status: %s/%s requests used.",
+            requests_made,
+            requests_limit,
+        )
+
+        return (
+            f"The current request status is {requests_made} / {requests_limit}",
+            max_calls_per_minute,
+        )
+
+    except requests.exceptions.RequestException:
+        logger.exception("Failed to retrieve API status.")
+        raise
 
 if __name__ == '__main__':
-    print(get_api_info())
+    get_api_info()

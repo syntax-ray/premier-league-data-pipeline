@@ -1,94 +1,232 @@
 from dotenv import load_dotenv
-import os
-import pandas as pd
-from db_int import DB
-from fetch_seasons import fetch_seasons
-import time
 import logging
-import requests
-from fetch_api_info import get_api_info
-from consts import LOGGING_FILE, API_FOOTBALL_URL
+import os
+import time
 
+import pandas as pd
+import requests
+
+from consts import API_FOOTBALL_URL, LOGGING_FILE
+from db_int import DB
+from fetch_api_info import get_api_info
+from fetch_seasons import fetch_seasons
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
-    filename=LOGGING_FILE
+    filename=LOGGING_FILE,
 )
 
 logger = logging.getLogger(__name__)
 
-
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
+
+API_KEY = os.getenv("API_KEY")
+
+if API_KEY is None:
+    raise RuntimeError("API_KEY environment variable is not set.")
+
 HEADERS = {
-    'x-apisports-key': API_KEY
+    "x-apisports-key": API_KEY
 }
 
 
 def fetch_league_ids():
-    '''
-        Fetch English Premier League league id. Returns a list incase the scope expands
-    '''
+    """
+    Fetch the league IDs to process.
+
+    Currently restricted to the English Premier League due to API limits.
+    """
     db = DB()
-    ids = []
-    # league ids with league data
+
     league_ids = db.fetch_league_ids()
-    prem_id_series = ((league_ids.loc[ (league_ids['name'] == 'Premier League') &  (league_ids['country'] == 'England')])['league_id'])
-    prem_id = prem_id_series.iloc[0]
-    ids.append(prem_id)
-    return ids
+
+    prem = league_ids.loc[
+        (league_ids["name"] == "Premier League")
+        & (league_ids["country"] == "England")
+    ]
+
+    if prem.empty:
+        raise ValueError("Premier League could not be found.")
+
+    return [prem.iloc[0]["league_id"]]
 
 
-def fetch_teams():
-    '''
-        Fetch teams data from api based on seasons
-            -> fetch teams
-            -> get existing team ids()
-            -> filter out teams that already exist
-            -> append the rest
-    '''
+def fetch_existing_team_ids():
+    """
+    Fetch existing team IDs from the database.
+
+    Returns
+    -------
+    set
+        Existing team IDs.
+    """
     db = DB()
+
+    return set(db.fetch_team_ids())
+
+
+def fetch_teams_for_season(league_id, season):
+    """
+    Fetch raw team data for a league and season.
+    """
+    try:
+        response = requests.get(
+            f"{API_FOOTBALL_URL}/teams",
+            params={
+                "league": league_id,
+                "season": season,
+            },
+            headers=HEADERS,
+            timeout=10,
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        logger.info(
+            "Fetched %d teams for season %s.",
+            len(data["response"]),
+            season,
+        )
+
+        return data["response"]
+
+    except requests.exceptions.RequestException:
+        logger.exception(
+            "Failed to fetch teams for league %s season %s.",
+            league_id,
+            season,
+        )
+        raise
+
+
+def transform_teams(teams, existing_team_ids):
+    """
+    Transform API team data into a DataFrame.
+    """
+
+    records = []
+
+    for team in teams:
+
+        team_id = team["team"]["id"]
+
+        if team_id in existing_team_ids:
+            continue
+
+        records.append(
+            {
+                "id": team_id,
+                "name": team["team"]["name"],
+                "country": team["team"]["country"],
+                "national": team["team"]["national"],
+            }
+        )
+
+    df = pd.DataFrame(records)
+
+    logger.info(
+        "Prepared %d new teams.",
+        len(df),
+    )
+
+    return df
+
+
+def save_teams(df):
+    """
+    Save teams to the database.
+    """
+
+    if df.empty:
+        logger.info("No new teams to save.")
+        return
+
+    try:
+        db = DB()
+
+        db.save_dataframe_to_table(
+            df,
+            table_name="team",
+            if_exists="append",
+        )
+
+        logger.info(
+            "Saved %d teams.",
+            len(df),
+        )
+
+    except Exception:
+        logger.exception("Failed to save teams.")
+        raise
+
+
+def wait_for_rate_limit(first_request):
+    """
+    Wait between API requests to respect the rate limit.
+
+    Returns
+    -------
+    bool
+        Always False after the first request.
+    """
+
+    if first_request:
+        return False
+
+    logger.info("Waiting 30 seconds for API rate limit.")
+
+    time.sleep(30)
+
+    return False
+
+
+def run():
+    """
+    Execute the team ingestion pipeline.
+    """
+
     league_ids = fetch_league_ids()
+
     seasons = fetch_seasons()
-    skip_sleep = False
 
-    for id in league_ids:
+    existing_team_ids = fetch_existing_team_ids()
+
+    first_request = True
+
+    for league_id in league_ids:
+
         for season in seasons:
-            logger.info('Fetching teams for season: (%s)', season)
-            if not skip_sleep:
-                skip_sleep = True
-            else:
-                time.sleep(30)
 
-            try:
-                response = requests.get(f"{API_FOOTBALL_URL}/teams?league={id}&season={season}", headers=HEADERS)
-                response = response.json()
-                teams = response['response']
-                clean_teams = {
-                    'id': [],
-                    'name': [],
-                    'country': [],
-                    'national': []
-                }
-                
-                existing_teams = db.fetch_team_ids()
-                for team in teams:
-                    team_id = team['team']['id']
-                    if team_id not in existing_teams:
-                        clean_teams['id'].append(team_id)
-                        clean_teams['name'].append(team['team']['name'])
-                        clean_teams['country'].append(team['team']['country'])
-                        clean_teams['national'].append(team['team']['national'])
-                clean_teams_df = pd.DataFrame(clean_teams)
-                db.save_dataframe_to_table(clean_teams_df, 'team', 'append')            
-            except Exception as e:
-                logger.error('Could not fetch leagues due to %s', e)
-    
+            logger.info("Processing season %s.", season)
+
+            first_request = wait_for_rate_limit(first_request)
+
+            teams = fetch_teams_for_season(
+                league_id,
+                season,
+            )
+
+            df = transform_teams(
+                teams,
+                existing_team_ids,
+            )
+
+            save_teams(df)
+            
+            if df.shape[0] > 0:
+                existing_team_ids.update(df["id"])
 
 
+if __name__ == "__main__":
 
-if __name__ == '__main__':
     current_api_status, _ = get_api_info()
     logger.info(current_api_status)
-    fetch_teams()
+
+    try:
+        run()
+
+    except Exception:
+        logger.exception("Team ingestion pipeline failed.")

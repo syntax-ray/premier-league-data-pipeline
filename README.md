@@ -19,11 +19,14 @@ Python, SQL, PostrgeSQL, dbt, Apache Superset
 * Interactive Apache Superset dashboards.
 * Comprehensive logging throughout the ingestion pipeline.
 
-## Future improvements
+## Future Improvements
 
-* Add additional data sources as api-football has a limit of 3 seasons on free plan
-* Deploy the data warehouse and pipeline to AWS.
-* Containerise the project
+- Containerise the platform using Docker for consistent development and deployment.
+- Deploy the data platform to AWS.
+- Integrate additional football data sources to enrich the analytics layer.
+- Introduce workflow orchestration for automated pipeline execution.
+- Implement CI/CD for automated testing and deployment.
+- Add monitoring and logging for improved pipeline reliability.
 
 ## How to run
 

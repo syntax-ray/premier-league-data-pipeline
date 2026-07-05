@@ -31,3 +31,7 @@ The customized Superset instance is included as a Git submodule.
 
 ## Superset startup
 sudo docker compose -f docker-compose-image-tag.yml up -d
+
+
+## Architrecture
+![Project Architecture](docs/architecture.png)

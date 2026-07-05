@@ -5,14 +5,10 @@ import os
 import requests
 
 from consts import API_FOOTBALL_URL, LOGGING_FILE
+from utils.logging_config import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    filename=LOGGING_FILE,
-)
+logger = get_logger(__name__)
 
-logger = logging.getLogger(__name__)
 
 load_dotenv()
 

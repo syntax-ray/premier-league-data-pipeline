@@ -9,14 +9,9 @@ import requests
 from consts import API_FOOTBALL_URL, LOGGING_FILE
 from db_int import DB
 from fetch_seasons import fetch_seasons
+from utils.logging_config import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    filename=LOGGING_FILE,
-)
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 load_dotenv()
 

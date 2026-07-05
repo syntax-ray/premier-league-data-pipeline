@@ -5,7 +5,7 @@ from db_int import DB
 from fetch_api_info import get_api_info
 from fetch_seasons import fetch_seasons
 from utils.logging_config import get_logger
-from api.api_football import api_football_get
+from api.api_football import api_football_get, wait_for_rate_limit
 
 logger = get_logger(__name__)
 
@@ -136,26 +136,6 @@ def save_teams(df):
         raise
 
 
-def wait_for_rate_limit(first_request):
-    """
-    Wait between API requests to respect the rate limit.
-
-    Returns
-    -------
-    bool
-        Always False after the first request.
-    """
-
-    if first_request:
-        return False
-
-    logger.info("Waiting 30 seconds for API rate limit.")
-
-    time.sleep(30)
-
-    return False
-
-
 def run():
     """
     Execute the team ingestion pipeline.
@@ -175,6 +155,9 @@ def run():
 
             logger.info("Processing season %s.", season)
 
+            if not first_request:
+                logger.info("Waiting 30 seconds for API rate limit.")
+            
             first_request = wait_for_rate_limit(first_request)
 
             teams = fetch_teams_for_season(

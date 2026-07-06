@@ -1,0 +1,14 @@
+data/
+docs/
+logs/
+pl_dbt/
+pl_superset/
+postgres-db-data/
+venv/
+.env
+.env-struct
+.gitignore
+README.md
+.git
+__pycache__/
+*.pyc

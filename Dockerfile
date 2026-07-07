@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY scripts ./scripts
 
-CMD [ "python", "scripts/fetch_matches.py" ]
+CMD [ "python", "scripts/pipeline.py" ]

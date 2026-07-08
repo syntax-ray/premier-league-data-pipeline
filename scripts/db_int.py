@@ -75,6 +75,7 @@ class DB:
                 pass
         except Exception as e:
             logger.error("Failed to create pipeline tables due to: %s", e)
+            raise
 
     def drop_pipeline_tables(self):
         engine = create_engine(self.conn_str)
@@ -89,6 +90,7 @@ class DB:
             logger.info("Successfully dropped all pipeline tables.")
         except Exception as e:
             logger.error("Failed to drop pipeline tables due to: %s", e)
+            raise
     
     def truncate_pipeline_tables(self):
         engine = create_engine(self.conn_str)
@@ -99,6 +101,7 @@ class DB:
             logger.info("Successfully truncated all pipeline tables.")
         except Exception as e:
             logger.error("Failed to truncate pipeline tables due to: %s", e)
+            raise
 
 
     def save_dataframe_to_table(self,df: pd.DataFrame, table_name: str, if_exists):
@@ -109,6 +112,7 @@ class DB:
             logger.info('Saved %s records to %s postgres table', rows, table_name)
         except Exception as e:
             logger.error('Could not save table due to %s', e)
+            raise
 
     def fetch_league_ids(self):
         engine = create_engine(self.conn_str)
@@ -118,6 +122,7 @@ class DB:
             return league_ids
         except Exception as e:
             logger.error('Could not fetch league ids due to %s', e)
+            raise
 
     def fetch_team_ids(self):
         engine = create_engine(self.conn_str)
@@ -126,6 +131,7 @@ class DB:
             return set(team_ids['id'].to_list()) if not team_ids.empty else {}
         except Exception as e:
             logger.error('Could not fetch team ids due to %s', e)
+            raise
 
     def fetch_match_ids(self):
         engine = create_engine(self.conn_str)
@@ -134,6 +140,7 @@ class DB:
             return set(match_ids['id'].to_list()) if not match_ids.empty else {}
         except Exception as e:
             logger.error('Could not fetch match ids due to %s', e)
+            raise
 
 
 if __name__ == '__main__':

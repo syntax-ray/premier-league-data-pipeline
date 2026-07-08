@@ -26,5 +26,16 @@ services:
     depends_on: 
       postgres:
         condition: service_healthy
-          
+  
+  dbt:
+    build:
+      context: ./pl_dbt 
+      dockerfile: Dockerfile
+    env_file:
+      - ./pl_dbt/.env
+    environment:
+      - DBT_PROFILES_DIR=/app
+    depends_on: 
+      postgres:
+        condition: service_healthy
        

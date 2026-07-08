@@ -3,3 +3,5 @@ logs/
 target/
 README.md
 .gitignore
+.env
+.env-struct

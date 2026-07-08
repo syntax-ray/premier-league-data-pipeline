@@ -19,7 +19,7 @@ services:
 
   extractor: 
     build: 
-      context: .
+      context: ./scripts
       dockerfile: Dockerfile
     env_file:
       - .env

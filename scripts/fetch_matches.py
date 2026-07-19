@@ -53,7 +53,7 @@ def fetch_matches_for_season(league_id, season):
         raise
 
 
-def transform_matches(matches, season, existing_match_ids):
+def transform_matches(matches, season, existing_match_ids, league_id):
     """
     Transform raw API data into a DataFrame.
     """
@@ -70,6 +70,7 @@ def transform_matches(matches, season, existing_match_ids):
         records.append(
             {
                 "id": match_id,
+                "league_id": league_id,
                 "date": match["fixture"]["date"],
                 "home_id": match["teams"]["home"]["id"],
                 "away_id": match["teams"]["away"]["id"],
@@ -156,6 +157,7 @@ def run():
                 matches,
                 season,
                 existing_match_ids,
+                league_id
             )
 
             records = df.shape[0]

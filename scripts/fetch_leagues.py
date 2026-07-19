@@ -9,6 +9,20 @@ from api.api_football import api_football_get
 logger = get_logger(__name__)
 
 
+def fetch_existing_league_ids():
+    """
+    Fetch all existing league IDs from the database.
+
+    Returns
+    -------
+    set
+        Existing league IDs for fast membership checks.
+    """
+    db = DB()
+
+    return set(db.fetch_existing_league_ids())
+
+
 def fetch_leagues():
     """
     Fetch raw league data from the API.
@@ -27,21 +41,31 @@ def fetch_leagues():
         raise
 
 
-def transform_leagues(leagues):
+def transform_leagues(leagues, existing_league_ids):
     """
     Transform raw API response into a pandas DataFrame.
     """
 
-    records = [
-        {
-            "id": idx + 1,
-            "league_id": league["league"]["id"],
-            "name": league["league"]["name"],
-            "type": league["league"]["type"],
-            "country": league["country"]["name"],
-        }
-        for idx, league in enumerate(leagues)
-    ]
+
+    records = []
+
+    for league in leagues:
+        league_id = league["league"]["id"]
+
+        if league_id in existing_league_ids:
+            continue
+
+        records.append(
+            {
+                "id": league_id,
+                "name": league["league"]["name"],
+                "type": league["league"]["type"],
+                "country": league["country"]["name"]
+            }
+        )
+
+        existing_league_ids.add(league_id)
+
 
     df = pd.DataFrame(records)
 
@@ -60,7 +84,7 @@ def save_leagues(df):
         db.save_dataframe_to_table(
             df,
             table_name="league",
-            if_exists="replace",
+            if_exists="append",
         )
 
         logger.info("Successfully saved %d leagues.", len(df))
@@ -76,7 +100,9 @@ def run():
     """
     leagues = fetch_leagues()
 
-    df = transform_leagues(leagues)
+    existing_league_ids = fetch_existing_league_ids()
+
+    df = transform_leagues(leagues, existing_league_ids)
 
     save_leagues(df)
 

@@ -38,7 +38,6 @@ class DB:
         league_table = """
         CREATE TABLE IF NOT EXISTS league (
             id INT PRIMARY KEY,
-            league_id BIGINT UNIQUE NOT NULL,
             name VARCHAR NOT NULL,
             type VARCHAR,
             country VARCHAR
@@ -57,6 +56,7 @@ class DB:
         match_table = '''
             create table if not exists match (
                 id bigint primary key
+                ,league_id int references league(id) not null
                 ,date timestamp not null
                 ,home_id int references team(id) not null   
                 ,away_id int references team(id) not null
@@ -84,9 +84,9 @@ class DB:
         match_table = 'drop table if exists match cascade'
         try:
             with engine.begin() as conn:
+                conn.execute(text(match_table))
                 conn.execute(text(league_table)) 
                 conn.execute(text(team_table))
-                conn.execute(text(match_table))
             logger.info("Successfully dropped all pipeline tables.")
         except Exception as e:
             logger.error("Failed to drop pipeline tables due to: %s", e)
@@ -117,7 +117,7 @@ class DB:
     def fetch_league(self):
         engine = create_engine(self.conn_str)
         try:
-            league_ids = pd.read_sql("select league_id, name, country from league", con=engine)
+            league_ids = pd.read_sql("select id, name, country from league", con=engine)
             logger.info('Successfully fetched league IDs')
             return league_ids
         except Exception as e:
@@ -137,6 +137,15 @@ class DB:
         engine = create_engine(self.conn_str)
         try:
             match_ids = pd.read_sql("select id from match", con=engine)
+            return set(match_ids['id'].to_list()) if not match_ids.empty else {}
+        except Exception as e:
+            logger.error('Could not fetch match ids due to %s', e)
+            raise
+
+    def fetch_existing_league_ids(self):
+        engine = create_engine(self.conn_str)
+        try:
+            match_ids = pd.read_sql("select id from league", con=engine)
             return set(match_ids['id'].to_list()) if not match_ids.empty else {}
         except Exception as e:
             logger.error('Could not fetch match ids due to %s', e)
@@ -175,7 +184,7 @@ class DB:
                 logger.error("Could not fetch %s - %s league data from the database", country, league_data)
                 raise RuntimeError("Could not fetch %s - %s league data from the database", country, league_data)
             else:
-                league_ids[f'{int(league.iloc[0]["league_id"])}'] = f'{country}-{league_name}' 
+                league_ids[f'{int(league.iloc[0]["id"])}'] = f'{country}-{league_name}' 
 
         return league_ids
 

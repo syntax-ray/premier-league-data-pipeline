@@ -9,26 +9,6 @@ from api.api_football import api_football_get, wait_for_rate_limit
 
 logger = get_logger(__name__)
 
-def fetch_league_ids():
-    """
-    Fetch the league IDs to process.
-
-    Currently restricted to the English Premier League due to API limits.
-    """
-    db = DB()
-
-    league_ids = db.fetch_league_ids()
-
-    prem = league_ids.loc[
-        (league_ids["name"] == "Premier League")
-        & (league_ids["country"] == "England")
-    ]
-
-    if prem.empty:
-        raise ValueError("Premier League could not be found.")
-
-    return [prem.iloc[0]["league_id"]]
-
 
 def fetch_existing_team_ids():
     """
@@ -141,7 +121,9 @@ def run():
     Execute the team ingestion pipeline.
     """
 
-    league_ids = fetch_league_ids()
+    db = DB()
+
+    league_ids = db.fetch_league_ids()
 
     seasons = fetch_seasons()
 
@@ -149,7 +131,9 @@ def run():
 
     first_request = True
 
-    for league_id in league_ids:
+    for league_id, league_description in league_ids.items():
+
+        logger.info("Fetching %s teams", league_description)
 
         for season in seasons:
 
@@ -174,6 +158,8 @@ def run():
 
             if df.shape[0] > 0:
                 existing_team_ids.update(df["id"])
+            else:
+                first_request = True
 
 
 if __name__ == "__main__":

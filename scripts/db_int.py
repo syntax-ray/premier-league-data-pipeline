@@ -114,7 +114,7 @@ class DB:
             logger.error('Could not save table due to %s', e)
             raise
 
-    def fetch_league_ids(self):
+    def fetch_league(self):
         engine = create_engine(self.conn_str)
         try:
             league_ids = pd.read_sql("select league_id, name, country from league", con=engine)
@@ -141,6 +141,43 @@ class DB:
         except Exception as e:
             logger.error('Could not fetch match ids due to %s', e)
             raise
+
+    def fetch_league_ids(self):
+        """
+        Fetch the league IDs to process.
+
+        Currently restricted to the top five European leagues.
+        1. Premier League - England 
+        2. Ligue 1 - France 
+        3. Bundesliga - Germany 
+        4. Serie A - Italy 
+        5. La Liga - Spain
+
+        return type - dict. League id -> description
+        """
+       
+
+        league_data = self.fetch_league()
+
+        league_ids = {}
+
+        top_leagues = ( ("Premier League", "England"), ("Ligue 1", "France"), ("Bundesliga", "Germany"), ("Serie A", "Italy"), ("La Liga", "Spain") )
+
+        for top_league in top_leagues:
+            league_name, country = top_league
+
+            league = (league_data.loc[
+                (league_data["name"] == league_name)
+                & (league_data["country"] == country)
+            ])
+
+            if league.empty:
+                logger.error("Could not fetch %s - %s league data from the database", country, league_data)
+                raise RuntimeError("Could not fetch %s - %s league data from the database", country, league_data)
+            else:
+                league_ids[f'{int(league.iloc[0]["league_id"])}'] = f'{country}-{league_name}' 
+
+        return league_ids
 
 
 if __name__ == '__main__':

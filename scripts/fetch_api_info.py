@@ -34,4 +34,4 @@ def get_api_info():
         raise
 
 if __name__ == '__main__':
-    get_api_info()
+    print(get_api_info())

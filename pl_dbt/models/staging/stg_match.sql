@@ -3,6 +3,7 @@ ranked_league_match
 as (
     select
        id                                                       as id
+       ,coalesce(league_id, -99)                                as league_id
        ,coalesce(date, '1700-01-01'::date)                      as date
        ,coalesce(home_id, -99)                                  as home_id
        ,coalesce(away_id, -99)                                  as away_id
@@ -15,7 +16,8 @@ as (
 )
 
 select
-  id                                                      
+  id
+  ,league_id                                                      
   ,date
   ,home_id
   ,away_id

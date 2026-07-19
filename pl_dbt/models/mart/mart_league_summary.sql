@@ -3,6 +3,8 @@ season_aggregates
 as (
 select
   season
+  ,league_id
+  ,league.name                                                               as league_name
   ,count(*)                                                                  as total_matches
   ,sum(home_score + away_score)                                              as total_goals_scored
   ,(sum(home_score + away_score)
@@ -17,13 +19,18 @@ select
      case when away_score = home_score then 1 else 0 end
    )::numeric * 100 / count(*), 2)                                           as draw_percentage
 
-from {{ ref('stg_match') }}
+from {{ ref('stg_match') }} as mtch
+left outer join {{ ref('stg_league') }} as league 
+  on mtch.league_id = league.id
 group by
-  season
+  season,
+  league_id,
+  league.name
 )
 
 select
-   season
+  season
+  ,league_name
   ,total_matches
   ,total_goals_scored
   ,average_goals_per_game

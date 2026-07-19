@@ -3,6 +3,8 @@ season_match_detail
 as (
     select
       mtch.id                                 as match_id
+      ,mtch.league_id
+      ,league.name                            as league_name
       ,home_id
       ,away_id
       ,home_team.name                         as home_name
@@ -14,6 +16,7 @@ as (
     from {{ ref('stg_match') }} mtch
     left outer join {{ ref('stg_team') }} home_team on mtch.home_id = home_team.id
     left outer join {{ ref('stg_team') }} away_team on mtch.away_id = away_team.id
+    left outer join {{ ref('stg_league') }} league on league.id = mtch.league_id 
 ),
 
 season_summary_home
@@ -22,6 +25,8 @@ as (
     team.id                                                                     as team_id
     ,team.name                                                                  as team_name
     ,smd_home.season
+    ,smd_home.league_id
+    ,smd_home.league_name
     ,count(*)                                                                   as home_matches_played
     ,sum(case
        when (smd_home.home_score > smd_home.away_score) then 1
@@ -47,10 +52,11 @@ as (
   from  {{ ref('stg_team') }} team
   left outer join season_match_detail smd_home on smd_home.home_id = team.id
   group by
-    team.id,
-    team.name,
-    smd_home.season
-
+    team.id
+    ,team.name
+    ,smd_home.season
+    ,smd_home.league_name
+    ,smd_home.league_id
 ),
 
 season_summary_away
@@ -59,6 +65,8 @@ as (
     team.id                                                                     as team_id
     ,team.name                                                                  as team_name
     ,smd_away.season
+    ,smd_away.league_id
+    ,smd_away.league_name
     ,count(*)                                                                   as away_matches_played
     ,sum(case
        when (smd_away.away_score > smd_away.home_score) then 1
@@ -84,10 +92,11 @@ as (
   from {{ ref('stg_team') }} team
   left outer join season_match_detail smd_away on smd_away.away_id = team.id
   group by
-    team.id,
-    team.name,
-    smd_away.season
-
+    team.id
+    ,team.name
+    ,smd_away.season
+    ,smd_away.league_name
+    ,smd_away.league_id
 ),
 
 season_summary
@@ -97,6 +106,7 @@ as (
     summary_home.season
     ,summary_home.team_id
     ,summary_home.team_name
+    ,summary_home.league_name
     ,summary_home.home_matches_played + summary_away.away_matches_played                                  as matches_played
     ,summary_home.home_wins + summary_away.away_wins                                                      as wins
     ,summary_home.home_draws + summary_away.away_draws                                                    as draws
@@ -145,6 +155,7 @@ as (
 select
   -- home & away
   season
+  ,league_name
   ,team_id
   ,team_name
   ,matches_played
@@ -185,4 +196,5 @@ select
 from season_summary
 order by
   season,
+  league_name,
   points desc
